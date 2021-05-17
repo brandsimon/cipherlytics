@@ -1,0 +1,7 @@
+[package]
+name = "cryptolytics"
+version = "0.1.0"
+authors = ["Simon Brand <simon.brand@postadigitale.de>"]
+edition = "2018"
+
+[dependencies]
