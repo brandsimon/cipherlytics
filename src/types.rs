@@ -1,5 +1,3 @@
-pub type BoxError = std::boxed::Box<dyn std::error::Error>;
-
 pub trait NumBytes {
 	const BYTES: u8;
 }
