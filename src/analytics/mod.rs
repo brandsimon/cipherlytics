@@ -1,3 +1,3 @@
 pub mod min_max;
-pub mod count_letters;
+pub mod frequency_analysis;
 pub mod kasiski_examination;
