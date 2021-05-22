@@ -34,30 +34,38 @@ mod tests {
 		return Err(());
 	}
 
-	fn test_min_max_empty_helper<T: Copy + PartialOrd>() -> Result<(), ()> {
+	fn text_min_max_empty_generic<T: Copy + PartialOrd>() -> Result<(), ()> {
 		let vec: Vec<T> = Vec::new();
 		check_min_max_error(min_max(&vec).err())?;
 		return Ok(());
 	}
 
 	#[test]
-	fn test_min_max_empty() -> Result<(), ()> {
-		test_min_max_empty_helper::<u8>()?;
-		test_min_max_empty_helper::<u16>()?;
-		test_min_max_empty_helper::<u32>()?;
-		test_min_max_empty_helper::<u64>()?;
-		test_min_max_empty_helper::<u128>()?;
+	fn min_max_empty() -> Result<(), ()> {
+		text_min_max_empty_generic::<u8>()?;
+		text_min_max_empty_generic::<u16>()?;
+		text_min_max_empty_generic::<u32>()?;
+		text_min_max_empty_generic::<u64>()?;
+		text_min_max_empty_generic::<u128>()?;
 		return Ok(());
 	}
 
 	#[test]
-	fn test_min_max() -> Result<(), io::Error> {
+	fn min_max_u8() -> Result<(), io::Error> {
 		let vec_u8: Vec<u8> = vec![223, 3, 17, 25, 255, 42, 102];
 		assert_eq!(min_max(&vec_u8)?, (3, 255));
+		return Ok(());
+	}
 
+	#[test]
+	fn min_max_u32() -> Result<(), io::Error> {
 		let vec_u32: Vec<u32> = vec![223, 3, 17, 25, 255, 42, 102];
 		assert_eq!(min_max(&vec_u32)?, (3, 255));
+		return Ok(());
+	}
 
+	#[test]
+	fn min_max_u128() -> Result<(), io::Error> {
 		let vec_u128: Vec<u128> = vec![223, 3, 17, 25, 255, 42, 102];
 		assert_eq!(min_max(&vec_u128)?, (3, 255));
 		return Ok(());
