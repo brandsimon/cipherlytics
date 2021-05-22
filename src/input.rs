@@ -19,8 +19,10 @@ pub fn convert_vec<T: Copy + NumBytes + AddAssign + Shl + From<u8> +
 	let num_bytes = T::BYTES;
 	let num_bytes_usize = usize::from(num_bytes);
 	if vec.len() % num_bytes_usize != 0 {
-		return Err(io::Error::new(io::ErrorKind::Other,
-		                          "Vector length needs to be a multiple of T's length"));
+		let err = format!(
+			"Vector length needs to be a multiple of T's size ({} bytes)",
+			T::BYTES);
+		return Err(io::Error::new(io::ErrorKind::Other, err));
 	}
 	let new_len: usize = vec.len() / num_bytes_usize;
 	let mut conv: Vec<T> = Vec::with_capacity(new_len);
@@ -84,11 +86,13 @@ mod tests {
 		return Ok(());
 	}
 
-	fn check_convert_vec_error(some_err: Option<io::Error>) -> Result<(), ()> {
+	fn check_convert_vec_error(some_err: Option<io::Error>, b: u8) -> Result<(), ()> {
 		if let Some(err) = some_err {
 			assert_eq!(err.kind(), io::ErrorKind::Other);
-			assert_eq!(err.to_string(),
-			           "Vector length needs to be a multiple of T's length");
+			let err = format!(
+				"Vector length needs to be a multiple of T's size ({} bytes)",
+				b);
+			assert_eq!(err.to_string(), err);
 			return Ok(());
 		}
 		return Err(());
@@ -106,7 +110,7 @@ mod tests {
                                  From<<T as Shl>::Output>>() -> Result<(), ()> {
 		for i in 1..T::BYTES {
 			let vec = create_test_vec(usize::from(T::BYTES + i));
-			check_convert_vec_error(convert_vec::<T>(&vec).err())?;
+			check_convert_vec_error(convert_vec::<T>(&vec).err(), T::BYTES)?;
 		}
 		return Ok(());
 	}
