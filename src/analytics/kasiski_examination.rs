@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::AddAssign;
 use std::hash::Hash;
 use std::collections::HashSet;
+use std::option::Option;
 
 
 fn find_common_length<T: Eq>(vec: &Vec<T>, start1: usize, start2: usize) -> usize {
@@ -28,6 +29,64 @@ fn param_to_word<T: Copy>(vec: &Vec<T>, start: usize, length: usize) -> Vec<T> {
 	return result;
 }
 
+
+// Iterator to iterate over Pair<T, T> from Vec<T>
+// Process every element value pair (e.g. (2, 7), (7, 2)) only once
+// do not iterate over pair where pair.0 == pair.1
+struct DeDupPairIter<'a, T: Hash> {
+	iter1: std::slice::Iter<'a, T>,
+	iter2: std::slice::Iter<'a, T>,
+	vec: &'a Vec<T>,
+	last1: Option<&'a T>,
+	processed: HashSet<(&'a T, &'a T)>,
+}
+
+impl<'a, T: Hash> DeDupPairIter<'a, T> {
+	pub fn new(vec: &'a Vec<T>) -> DeDupPairIter<'a, T>{
+		let mut iter1 = vec.into_iter();
+		let last1 = iter1.next();
+		return DeDupPairIter {
+			iter1: iter1,
+			iter2: vec.into_iter(),
+			vec: vec,
+			last1: last1,
+			processed: HashSet::new(),
+		};
+	}
+}
+
+impl<'a, T: 'a + Eq + Hash> Iterator for DeDupPairIter<'a, T> {
+	type Item = (&'a T, &'a T);
+
+	fn next(&mut self) -> Option<Self::Item> {
+		loop {
+			let v1 = match self.last1 {
+				None => {
+					return None;
+				},
+				Some(val1) => val1,
+			};
+			match self.iter2.next() {
+				None => {
+					self.last1 = self.iter1.next();
+					self.iter2 = self.vec.into_iter();
+				},
+				Some(v2) => {
+					let process =
+						v1 != v2 &&
+						!self.processed.contains(&(v1, v2)) &&
+						!self.processed.contains(&(v2, v1));
+					if process {
+						self.processed.insert((v1, v2));
+						return Some((v1, v2));
+					}
+				},
+			};
+		};
+	}
+}
+
+
 // Return start of duplicate words with a min length
 // Shorter duplicates are returned since longer matches can be by accident in the text
 pub fn kasiski_examination<
@@ -45,17 +104,16 @@ pub fn kasiski_examination<
 		words_start.entry(word).or_insert(Vec::new()).push(i);
 	}
 	for (_, word_starts) in &words_start {
-		for start1 in word_starts {
-			for start2 in word_starts {
-				if start1 != start2 {
-					let check1 = start1 + min_length;
-					let check2 = start2 + min_length;
-					let l = find_common_length(vec, check1, check2);
-					let total_length = min_length + l;
-					let l_word = param_to_word(vec, *start1, total_length);
-					result.entry(l_word).or_insert(HashSet::new()).insert(*start1);
-				}
-			}
+		// Only iterate once over every tuple of starts
+		for starts in DeDupPairIter::new(word_starts) {
+			let check1 = starts.0 + min_length;
+			let check2 = starts.1 + min_length;
+			let l = find_common_length(vec, check1, check2);
+			let total_length = min_length + l;
+			let l_word = param_to_word(vec, *starts.0, total_length);
+			let set = result.entry(l_word).or_insert(HashSet::new());
+			set.insert(*starts.0);
+			set.insert(*starts.1);
 		}
 	}
 	return result;
@@ -66,6 +124,7 @@ mod tests {
 	use super::kasiski_examination;
 	use super::param_to_word;
 	use super::find_common_length;
+	use super::DeDupPairIter;
 	use std::collections::HashMap;
 	use std::collections::HashSet;
 
@@ -104,6 +163,18 @@ mod tests {
 	fn find_common_length_u64() {
 		let vec_u64: Vec<u64> = vec![685654, 54433, 76856, 765835, 24523];
 		assert_eq!(find_common_length(&vec_u64, 1, 1), 4);
+	}
+
+	#[test]
+	fn dedup_pair_iter() {
+		let vec: Vec<usize> = vec![8, 2, 7, 2, 3, 7];
+		let mut result = Vec::new();
+		for i in DeDupPairIter::new(&vec) {
+			result.push((*i.0, *i.1));
+		}
+		let exp_res: Vec<(usize, usize)> = vec![
+			(8, 2), (8, 7), (8, 3), (2, 7), (2, 3), (7, 3)];
+		assert_eq!(result, exp_res);
 	}
 
 	#[test]
