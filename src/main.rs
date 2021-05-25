@@ -5,6 +5,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::AddAssign;
 use std::ops::Shl;
+use std::io;
 mod analytics;
 mod input;
 mod types;
@@ -16,6 +17,8 @@ fn main_type<
 	   From<<T as Shl>::Output> + types::NumBytes + Display + PartialOrd
 >(input: &Vec<u8>, action: &arguments::Action) {
 	let vec = input::convert_vec::<T>(&input).unwrap(); // TODO unwrap
+	let mut stdout = io::stdout();
+	let mut out = io::Stdout::lock(&mut stdout);
 	match action.method {
 		arguments::AnalyzeMethod::None => (),
 		arguments::AnalyzeMethod::MinMax => {
@@ -24,9 +27,7 @@ fn main_type<
 		},
 		arguments::AnalyzeMethod::FrequencyAnalysis => {
 			let res = analytics::frequency_analysis(&vec);
-			for (i, j) in res {
-				println!("{}: {}", j, i);
-			}
+			analytics::print_frequency_analysis_result(res, &mut out);
 		},
 		arguments::AnalyzeMethod::KasiskiExamination(l) => {
 			let res = analytics::kasiski_examination(&vec, l);

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use std::hash::Hash;
+use std::fmt::Display;
+use std::io::Write;
 
 pub fn frequency_analysis<T: Copy + AddAssign + Eq + Hash>(vec: &Vec<T>) -> HashMap<T, usize> {
 	let mut map: HashMap<T, usize> = HashMap::new();
@@ -10,10 +12,20 @@ pub fn frequency_analysis<T: Copy + AddAssign + Eq + Hash>(vec: &Vec<T>) -> Hash
 	return map;
 }
 
+pub fn print_frequency_analysis_result<T: Display, W: Write>(map: HashMap<T, usize>, out: &mut W) {
+	let mut vec: Vec<(&T, &usize)> = map.iter().collect();
+	vec.sort_by(|a, b| b.1.cmp(a.1));
+	for (i, j) in vec {
+		writeln!(out, "{}: {}", j, i).unwrap();
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::analytics::frequency_analysis::frequency_analysis;
+	use crate::analytics::frequency_analysis::print_frequency_analysis_result;
 	use std::collections::HashMap;
+	use std::io::Write;
 
 	#[test]
 	fn frequency_analysis_u8() {
@@ -33,6 +45,18 @@ mod tests {
 			result_u64,
 			[(684631, 1), (2, 1), (47652, 1), (64374, 1), (12743, 3), (547, 2),
 			  (3562, 1), (1253, 1)].iter().cloned().collect());
+	}
+
+	#[test]
+	fn print_frequency_analysis_result_test() {
+		let vec: Vec<(u32, usize)> = vec![(684, 4), (2, 1), (242, 5), (2, 1), (123, 3)];
+		let mut out = Vec::new();
+		print_frequency_analysis_result(vec.iter().cloned().collect(), &mut out);
+		let mut expected = Vec::new();
+		writeln!(expected, "5: 242\n4: 684\n3: 123\n1: 2").unwrap();
+		assert_eq!(
+			out,
+			expected);
 	}
 
 	#[test]
