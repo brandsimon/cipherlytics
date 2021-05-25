@@ -54,9 +54,7 @@ mod tests {
 		print_frequency_analysis_result(vec.iter().cloned().collect(), &mut out);
 		let mut expected = Vec::new();
 		writeln!(expected, "5: 242\n4: 684\n3: 123\n1: 2").unwrap();
-		assert_eq!(
-			out,
-			expected);
+		assert_eq!(out, expected);
 	}
 
 	#[test]
