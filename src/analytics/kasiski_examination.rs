@@ -307,8 +307,6 @@ mod tests {
 		writeln!(expected, "{{1, 8}}: [3, 17, 223, 4, 2]").unwrap();
 		writeln!(expected, "{{1, 2, 3, 5}}: [223, 255, 4]").unwrap();
 		writeln!(expected, "{{2, 6, 9}}: [17, 223]").unwrap();
-		println!("{:?}", std::str::from_utf8(&out));
-		println!("{:?}", std::str::from_utf8(&expected));
 		assert_eq!(out, expected);
 	}
 }
