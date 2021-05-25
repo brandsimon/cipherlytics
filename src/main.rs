@@ -48,7 +48,7 @@ fn main() {
 		},
 	};
 	if action.help {
-		println!("Help message"); // TODO
+		arguments::help(&args[0]);
 		return;
 	}
 	let input = input::read_file(&action.filename).unwrap(); // TODO unwrap

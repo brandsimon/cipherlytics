@@ -26,6 +26,12 @@ pub struct Action {
 }
 
 const DEFAULT_KASISKI_LEN: usize = 5;
+const DEFAULT_SIZE: &str = "1";
+const STR_MIN_MAX: &str = "min_max";
+const STR_FREQUENCY_ANALYSIS: &str = "frequency_analysis";
+const STR_KASISKI_EXAMINATION: &str = "kasiski_examination";
+const STR_MIN_LENGTH: &str = "--min-length";
+const STR_BYTES: &str = "--bytes";
 
 fn parse_sizes(arg: Option<&String>) -> Result<Sizes, String> {
 	let error = Err("Bytes parameter is invalid".to_string());
@@ -63,7 +69,7 @@ fn parse_kasiski_examination_params(args: &Vec<String>, pos: usize) ->
 	}
 	let arg = &args[pos];
 	return match Some(&*arg.to_string()) {
-		Some("--min-length") => {
+		Some(STR_MIN_LENGTH) => {
 			let m = parse_usize(
 				args.get(pos + 1),
 				"min-length is invalid".to_string())?;
@@ -78,25 +84,25 @@ pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
 	let mut file: Option<String> = None;
 	let mut help = false;
 	let mut method_set_count = 0;
-	let mut size: Sizes = Sizes::U8;
+	let mut size: Sizes = parse_sizes(Some(&DEFAULT_SIZE.to_string())).unwrap();
 
 	let mut pos = 1; // Skip binary
 	while pos < args.len() {
 		let arg = &args[pos];
 		match Some(&*arg.to_string()) {
-			Some("--bytes") => {
+			Some(STR_BYTES) => {
 				pos += 1;
 				size = parse_sizes(args.get(pos))?;
 			},
-			Some("min_max") => {
+			Some(STR_MIN_MAX) => {
 				method = AnalyzeMethod::MinMax;
 				method_set_count += 1;
 			},
-			Some("frequency_analysis") => {
+			Some(STR_FREQUENCY_ANALYSIS) => {
 				method = AnalyzeMethod::FrequencyAnalysis;
 				method_set_count += 1;
 			},
-			Some("kasiski_examination") => {
+			Some(STR_KASISKI_EXAMINATION) => {
 				let (m, a) = parse_kasiski_examination_params(args, pos + 1)?;
 				method = m;
 				pos += a;
@@ -134,6 +140,30 @@ pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
 		}),
 		_ => Err("No file specified".to_string()),
 	}
+}
+
+pub fn help(exe: &String) {
+	println!(
+		"Analyze ciphertext with classical cryptanalysis\n\
+		\n\
+		Usage: {exe} [--bytes BYTES] METHOD [METHOD PARAMETERS] FILE\n\
+		\t-h|--help: Print this help message\n\
+		\t{bytes}:   How many bytes to group together.\n\
+		\t           1, 2, 4, 8, 16 (Default: {size}\n\
+		\n\
+		Methods:\n\
+		\t{min_max}                 Show range of bytes\n\
+		\t{frequency_analysis}      Count occurence of bytes\n\
+		\t{kasiski_examination}     Show duplicate words\n\
+		\t\t{min_length}    Minimum word length, Default: {kasiski_len}",
+		exe=exe,
+		kasiski_len=DEFAULT_KASISKI_LEN,
+		frequency_analysis=STR_FREQUENCY_ANALYSIS,
+		min_max=STR_MIN_MAX,
+		min_length=STR_MIN_LENGTH,
+		kasiski_examination=STR_KASISKI_EXAMINATION,
+		bytes=STR_BYTES,
+		size=DEFAULT_SIZE);
 }
 
 #[cfg(test)]
