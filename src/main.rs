@@ -31,10 +31,7 @@ fn main_type<
 		},
 		arguments::AnalyzeMethod::KasiskiExamination(l) => {
 			let res = analytics::kasiski_examination(&vec, l);
-			println!("Res size: {}", res.len());
-			for (i, j) in res {
-				println!("{:?}: {:?}", j, i);
-			}
+			analytics::print_kasiski_examination_result(res, &mut out).unwrap(); // TODO
 		},
 	};
 }

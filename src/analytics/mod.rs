@@ -8,3 +8,4 @@ pub use frequency_analysis::print_frequency_analysis_result;
 
 mod kasiski_examination;
 pub use kasiski_examination::kasiski_examination;
+pub use kasiski_examination::print_kasiski_examination_result;
