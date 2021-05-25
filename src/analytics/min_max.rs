@@ -1,5 +1,7 @@
 use std::io;
 use std::cmp::PartialOrd;
+use std::fmt::Display;
+use std::io::Write;
 
 pub fn min_max<T: Copy + PartialOrd>(vec: &Vec<T>) -> Result<(T, T), io::Error> {
 	if vec.len() == 0 {
@@ -19,10 +21,16 @@ pub fn min_max<T: Copy + PartialOrd>(vec: &Vec<T>) -> Result<(T, T), io::Error> 
 	return Ok((min, max));
 }
 
+pub fn print_min_max_result<T: Display, W: Write>(result: &(T, T), out: &mut W) {
+	writeln!(out, "Minimum: {}, Maximum: {}", result.0, result.1).unwrap();
+}
+
 #[cfg(test)]
 mod tests {
 	use std::io;
 	use crate::analytics::min_max::min_max;
+	use crate::analytics::min_max::print_min_max_result;
+	use std::io::Write;
 
 	fn check_min_max_error(some_err: Option<io::Error>) -> Result<(), ()> {
 		if let Some(err) = some_err {
@@ -69,5 +77,14 @@ mod tests {
 		let vec_u128: Vec<u128> = vec![223, 3, 17, 25, 255, 42, 102];
 		assert_eq!(min_max(&vec_u128)?, (3, 255));
 		return Ok(());
+	}
+
+	#[test]
+	fn print_min_max_result_test() {
+		let mut out = Vec::new();
+		print_min_max_result(&(7, 19), &mut out);
+		let mut expected = Vec::new();
+		writeln!(expected, "Minimum: 7, Maximum: 19").unwrap();
+		assert_eq!(out, expected);
 	}
 }

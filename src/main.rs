@@ -23,7 +23,7 @@ fn main_type<
 		arguments::AnalyzeMethod::None => (),
 		arguments::AnalyzeMethod::MinMax => {
 			let res = analytics::min_max(&vec).unwrap(); // TODO unwrap
-			println!("Min: {}, Max: {}", res.0, res.1);
+			analytics::print_min_max_result(&res, &mut out);
 		},
 		arguments::AnalyzeMethod::FrequencyAnalysis => {
 			let res = analytics::frequency_analysis(&vec);
