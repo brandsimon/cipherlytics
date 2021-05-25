@@ -13,7 +13,6 @@ pub fn read_file(filename: &str) -> Result<Vec<u8>, io::Error> {
 	Ok(vec)
 }
 
-
 pub fn convert_vec<T: Copy + NumBytes + AddAssign + Shl + From<u8> +
                From<<T as Shl>::Output>>(vec: &Vec<u8>) -> Result<Vec<T>, io::Error> {
 	let num_bytes = T::BYTES;
@@ -41,14 +40,31 @@ pub fn convert_vec<T: Copy + NumBytes + AddAssign + Shl + From<u8> +
 	Ok(conv)
 }
 
+pub fn filter_input_vec<T: Copy>(vec: &Vec<T>, keep_every: usize, shift: usize)
+		-> Result<Vec<T>, io::Error> {
+	if keep_every == 0 {
+		let err = "Cannot keep every 0.th element, parameter needs to be > 0";
+		return Err(io::Error::new(io::ErrorKind::Other, err));
+	}
+	let mut result: Vec<T> = Vec::with_capacity(vec.len() % keep_every);
+	for i in shift..vec.len() {
+		if (i - shift) % keep_every == 0 {
+			result.push(vec[i]);
+		}
+	}
+	return Ok(result);
+}
+
 
 #[cfg(test)]
 mod tests {
 	use std::io;
 	use crate::input::convert_vec;
 	use crate::input::read_file;
+	use crate::input::filter_input_vec;
 	use std::ops::Shl;
 	use std::ops::AddAssign;
+	use std::fmt::Debug;
 	use crate::types::NumBytes;
 
 	#[test]
@@ -86,16 +102,12 @@ mod tests {
 		return Ok(());
 	}
 
-	fn check_convert_vec_error(some_err: Option<io::Error>, b: u8) -> Result<(), ()> {
-		if let Some(err) = some_err {
-			assert_eq!(err.kind(), io::ErrorKind::Other);
-			let err = format!(
-				"Vector length needs to be a multiple of T's size ({} bytes)",
-				b);
-			assert_eq!(err.to_string(), err);
-			return Ok(());
-		}
-		return Err(());
+	fn check_convert_vec_error(err: io::Error, b: u8) {
+		assert_eq!(err.kind(), io::ErrorKind::Other);
+		let err = format!(
+			"Vector length needs to be a multiple of T's size ({} bytes)",
+			b);
+		assert_eq!(err.to_string(), err);
 	}
 
 	fn create_test_vec(size: usize) -> Vec<u8> {
@@ -107,20 +119,19 @@ mod tests {
 	}
 
 	fn test_convert_vec_auto<T: Copy + NumBytes + AddAssign + Shl + From<u8> +
-                                 From<<T as Shl>::Output>>() -> Result<(), ()> {
+                                 From<<T as Shl>::Output> + Debug>() {
 		for i in 1..T::BYTES {
 			let vec = create_test_vec(usize::from(T::BYTES + i));
-			check_convert_vec_error(convert_vec::<T>(&vec).err(), T::BYTES)?;
+			check_convert_vec_error(convert_vec::<T>(&vec).unwrap_err(), T::BYTES);
 		}
-		return Ok(());
 	}
 
 	#[test]
 	fn test_convert_vec_errors() -> Result<(), ()> {
-		test_convert_vec_auto::<u16>()?;
-		test_convert_vec_auto::<u32>()?;
-		test_convert_vec_auto::<u64>()?;
-		test_convert_vec_auto::<u128>()?;
+		test_convert_vec_auto::<u16>();
+		test_convert_vec_auto::<u32>();
+		test_convert_vec_auto::<u64>();
+		test_convert_vec_auto::<u128>();
 		return Ok(());
 	}
 
@@ -140,5 +151,47 @@ mod tests {
 			return Ok(());
 		}
 		return Err(());
+	}
+
+	#[test]
+	fn filter_input_vec_error() {
+		let vec: Vec<u8> = vec![];
+		let err = filter_input_vec(&vec, 0, 5).unwrap_err();
+		assert_eq!(err.kind(), io::ErrorKind::Other);
+		assert_eq!(
+			err.to_string(),
+			"Cannot keep every 0.th element, parameter needs to be > 0");
+	}
+
+	#[test]
+	fn filter_input_vec_copy() {
+		let vec: Vec<u8> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
+		assert_eq!(
+			filter_input_vec(&vec, 1, 0).unwrap(),
+			vec);
+	}
+
+	#[test]
+	fn filter_input_vec_every() {
+		let vec: Vec<u16> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
+		assert_eq!(
+			filter_input_vec(&vec, 3, 0).unwrap(),
+			vec![4, 85, 56]);
+	}
+
+	#[test]
+	fn filter_input_vec_shift() {
+		let vec: Vec<u32> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
+		assert_eq!(
+			filter_input_vec(&vec, 1, 4).unwrap(),
+			vec![2, 53, 56, 23, 86]);
+	}
+
+	#[test]
+	fn filter_input_vec_shift_and_every() {
+		let vec: Vec<u64> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
+		assert_eq!(
+			filter_input_vec(&vec, 3, 2).unwrap(),
+			vec![12, 53, 86]);
 	}
 }
