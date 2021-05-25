@@ -121,37 +121,36 @@ pub fn kasiski_examination<
 	return result;
 }
 
+fn print_inner_vec<
+	T: Display, W: Write
+>(vec: &Vec<T>, out: &mut W) -> Result<(), io::Error> {
+	let mut first = true;
+	for k in vec {
+		if first {
+			write!(out, "{}", k)?;
+			first = false;
+		} else {
+			write!(out, ", {}", k)?;
+		}
+	}
+	return Ok(());
+}
+
 pub fn print_kasiski_examination_result<
 	T: Display, W: Write
->(map: HashMap<Vec<T>, HashSet<usize>>, out: &mut W) -> Result<(), io::Error>{
+>(map: HashMap<Vec<T>, HashSet<usize>>, mut out: &mut W) -> Result<(), io::Error> {
 	writeln!(out, "Words: {}", map.len())?;
 	let mut vec: Vec<(&Vec<T>, &HashSet<usize>)> = map.iter().collect();
 	vec.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
 	for (i, j) in vec {
 		// Write Set
-		write!(out, "{{")?;
 		let mut starts: Vec<&usize> = j.iter().collect();
 		starts.sort_by(|a, b| a.cmp(b));
-		let mut f1 = false;
-		for k in starts {
-			if f1 {
-				write!(out, ", {}", k)?;
-			} else {
-				write!(out, "{}", k)?;
-				f1 = true;
-			}
-		}
+		write!(out, "{{")?;
+		print_inner_vec(&starts, &mut out)?;
 		write!(out, "}}: [")?;
 		// Write Vec
-		let mut f2 = false;
-		for k in i {
-			if f2 {
-				write!(out, ", {}", k)?;
-			} else {
-				write!(out, "{}", k)?;
-				f2 = true;
-			}
-		}
+		print_inner_vec(&i, &mut out)?;
 		writeln!(out, "]")?;
 	}
 	return Ok(());
@@ -161,6 +160,7 @@ pub fn print_kasiski_examination_result<
 mod tests {
 	use super::kasiski_examination;
 	use super::print_kasiski_examination_result;
+	use super::print_inner_vec;
 	use super::param_to_word;
 	use super::find_common_length;
 	use super::DeDupPairIter;
@@ -260,6 +260,28 @@ mod tests {
 	fn kasiski_examination_empty() {
 		let vec: Vec<u128> = vec![];
 		assert_eq!(kasiski_examination(&vec, 8), HashMap::new());
+	}
+
+	#[test]
+	fn print_inner_vec_empty() {
+		let mut out = Vec::new();
+		let vec: Vec<u8> = Vec::new();
+		print_inner_vec(&vec, &mut out).unwrap();
+		assert_eq!(std::str::from_utf8(&out), Ok(""));
+	}
+
+	#[test]
+	fn print_inner_vec_one_element() {
+		let mut out = Vec::new();
+		print_inner_vec(&vec![24 as u8], &mut out).unwrap();
+		assert_eq!(std::str::from_utf8(&out), Ok("24"));
+	}
+
+	#[test]
+	fn print_inner_vec_multiple_elements() {
+		let mut out = Vec::new();
+		print_inner_vec(&vec![24 as u8, 5, 32, 7], &mut out).unwrap();
+		assert_eq!(std::str::from_utf8(&out), Ok("24, 5, 32, 7"));
 	}
 
 	#[test]
