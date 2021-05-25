@@ -15,25 +15,27 @@ mod arguments;
 fn main_type<
 	T: Copy + AddAssign + Eq + Hash + Debug + Shl + From<u8> +
 	   From<<T as Shl>::Output> + types::NumBytes + Display + PartialOrd
->(input: &Vec<u8>, action: &arguments::Action) {
-	let vec = input::convert_vec::<T>(&input).unwrap(); // TODO unwrap
+>(action: &arguments::Action) -> Result<(), io::Error> {
+	let input = input::read_file(&action.filename)?;
+	let vec = input::convert_vec::<T>(&input)?;
 	let mut stdout = io::stdout();
 	let mut out = io::Stdout::lock(&mut stdout);
 	match action.method {
 		arguments::AnalyzeMethod::None => (),
 		arguments::AnalyzeMethod::MinMax => {
-			let res = analytics::min_max(&vec).unwrap(); // TODO unwrap
-			analytics::print_min_max_result(&res, &mut out);
+			let res = analytics::min_max(&vec)?;
+			analytics::print_min_max_result(&res, &mut out)?;
 		},
 		arguments::AnalyzeMethod::FrequencyAnalysis => {
 			let res = analytics::frequency_analysis(&vec);
-			analytics::print_frequency_analysis_result(res, &mut out);
+			analytics::print_frequency_analysis_result(res, &mut out)?;
 		},
 		arguments::AnalyzeMethod::KasiskiExamination(l) => {
 			let res = analytics::kasiski_examination(&vec, l);
-			analytics::print_kasiski_examination_result(res, &mut out).unwrap(); // TODO
+			analytics::print_kasiski_examination_result(res, &mut out)?;
 		},
 	};
+	return Ok(());
 }
 
 fn main() {
@@ -49,12 +51,17 @@ fn main() {
 		arguments::help(&args[0]);
 		return;
 	}
-	let input = input::read_file(&action.filename).unwrap(); // TODO unwrap
-	match action.size {
-		arguments::Sizes::U8 => main_type::<u8>(&input, &action),
-		arguments::Sizes::U16 => main_type::<u16>(&input, &action),
-		arguments::Sizes::U32 => main_type::<u32>(&input, &action),
-		arguments::Sizes::U64 => main_type::<u64>(&input, &action),
-		arguments::Sizes::U128 => main_type::<u128>(&input, &action),
+	let result = match action.size {
+		arguments::Sizes::U8 => main_type::<u8>(&action),
+		arguments::Sizes::U16 => main_type::<u16>(&action),
+		arguments::Sizes::U32 => main_type::<u32>(&action),
+		arguments::Sizes::U64 => main_type::<u64>(&action),
+		arguments::Sizes::U128 => main_type::<u128>(&action),
+	};
+	match result {
+		Ok(()) => (),
+		Err(l) => {
+			println!("Error: {}", l);
+		},
 	}
 }

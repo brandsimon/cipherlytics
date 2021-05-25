@@ -3,6 +3,7 @@ use std::ops::AddAssign;
 use std::hash::Hash;
 use std::fmt::Display;
 use std::io::Write;
+use std::io;
 
 pub fn frequency_analysis<T: Copy + AddAssign + Eq + Hash>(vec: &Vec<T>) -> HashMap<T, usize> {
 	let mut map: HashMap<T, usize> = HashMap::new();
@@ -12,12 +13,15 @@ pub fn frequency_analysis<T: Copy + AddAssign + Eq + Hash>(vec: &Vec<T>) -> Hash
 	return map;
 }
 
-pub fn print_frequency_analysis_result<T: Display, W: Write>(map: HashMap<T, usize>, out: &mut W) {
+pub fn print_frequency_analysis_result<
+	T: Display, W: Write
+>(map: HashMap<T, usize>, out: &mut W) -> Result<(), io::Error> {
 	let mut vec: Vec<(&T, &usize)> = map.iter().collect();
 	vec.sort_by(|a, b| b.1.cmp(a.1));
 	for (i, j) in vec {
-		writeln!(out, "{}: {}", j, i).unwrap();
+		writeln!(out, "{}: {}", j, i)?;
 	}
+	return Ok(());
 }
 
 #[cfg(test)]
@@ -51,7 +55,7 @@ mod tests {
 	fn print_frequency_analysis_result_test() {
 		let vec: Vec<(u32, usize)> = vec![(684, 4), (2, 1), (242, 5), (2, 1), (123, 3)];
 		let mut out = Vec::new();
-		print_frequency_analysis_result(vec.iter().cloned().collect(), &mut out);
+		print_frequency_analysis_result(vec.iter().cloned().collect(), &mut out).unwrap();
 		let mut expected = Vec::new();
 		writeln!(expected, "5: 242\n4: 684\n3: 123\n1: 2").unwrap();
 		assert_eq!(out, expected);

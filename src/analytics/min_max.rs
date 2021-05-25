@@ -21,8 +21,11 @@ pub fn min_max<T: Copy + PartialOrd>(vec: &Vec<T>) -> Result<(T, T), io::Error> 
 	return Ok((min, max));
 }
 
-pub fn print_min_max_result<T: Display, W: Write>(result: &(T, T), out: &mut W) {
-	writeln!(out, "Minimum: {}, Maximum: {}", result.0, result.1).unwrap();
+pub fn print_min_max_result<
+	T: Display, W: Write
+>(result: &(T, T), out: &mut W) -> Result<(), io::Error> {
+	writeln!(out, "Minimum: {}, Maximum: {}", result.0, result.1)?;
+	return Ok(());
 }
 
 #[cfg(test)]
@@ -82,7 +85,7 @@ mod tests {
 	#[test]
 	fn print_min_max_result_test() {
 		let mut out = Vec::new();
-		print_min_max_result(&(7, 19), &mut out);
+		print_min_max_result(&(7, 19), &mut out).unwrap();
 		let mut expected = Vec::new();
 		writeln!(expected, "Minimum: 7, Maximum: 19").unwrap();
 		assert_eq!(out, expected);
