@@ -181,8 +181,9 @@ pub fn help(exe: &String) {
 	println!(
 		"Analyze ciphertext with classical cryptanalysis\n\
 		\n\
-		Usage: {exe} [{bytes} BYTES] [{skip_first} SKIP_FIRST]\
-		[{keep_every} KEEP_EVERY] [METHOD [METHOD PARAMETERS] FILE\n\
+		Usage: {exe} [OPTIONAL ARGUMENTS] [METHOD [METHOD PARAMETERS] FILE\n\
+		\n\
+		Optional arguments:\n\
 		\t-h|--help:    Print this help message\n\
 		\t{bytes}:      How many bytes to group together.\n\
 		\t              1, 2, 4, 8, 16 (Default: {size}\n\
