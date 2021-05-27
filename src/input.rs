@@ -40,15 +40,15 @@ pub fn convert_vec<T: Copy + NumBytes + AddAssign + Shl + From<u8> +
 	Ok(conv)
 }
 
-pub fn filter_input_vec<T: Copy>(vec: &Vec<T>, keep_every: usize, shift: usize)
+pub fn filter_input_vec<T: Copy>(vec: &Vec<T>, keep_every: usize, skip_first: usize)
 		-> Result<Vec<T>, io::Error> {
 	if keep_every == 0 {
 		let err = "Cannot keep every 0.th element, parameter needs to be > 0";
 		return Err(io::Error::new(io::ErrorKind::Other, err));
 	}
 	let mut result: Vec<T> = Vec::with_capacity(vec.len() % keep_every);
-	for i in shift..vec.len() {
-		if (i - shift) % keep_every == 0 {
+	for i in skip_first..vec.len() {
+		if (i - skip_first) % keep_every == 0 {
 			result.push(vec[i]);
 		}
 	}
@@ -180,7 +180,7 @@ mod tests {
 	}
 
 	#[test]
-	fn filter_input_vec_shift() {
+	fn filter_input_vec_skip_first() {
 		let vec: Vec<u32> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
 		assert_eq!(
 			filter_input_vec(&vec, 1, 4).unwrap(),
@@ -188,7 +188,7 @@ mod tests {
 	}
 
 	#[test]
-	fn filter_input_vec_shift_and_every() {
+	fn filter_input_vec_skip_first_and_every() {
 		let vec: Vec<u64> = vec![4, 9, 12, 85, 2, 53, 56, 23, 86];
 		assert_eq!(
 			filter_input_vec(&vec, 3, 2).unwrap(),
