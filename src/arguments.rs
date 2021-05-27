@@ -78,7 +78,7 @@ fn parse_kasiski_examination_params(args: &Vec<String>, pos: usize) ->
 		Some(STR_MIN_LENGTH) => {
 			let m = parse_usize(
 				args.get(pos + 1),
-				"min-length is invalid".to_string())?;
+				&format!("{} is invalid", STR_MIN_LENGTH))?;
 			Ok((AnalyzeMethod::KasiskiExamination(m), 2))
 		},
 		_ => Ok((AnalyzeMethod::KasiskiExamination(DEFAULT_KASISKI_LEN), 0)),
@@ -275,7 +275,7 @@ mod tests {
 		let err_v = vec_str_conv(vec!["--min-length", "b"]);
 		assert_eq!(
 			arguments::parse_kasiski_examination_params(&err_v, 0),
-			Err("min-length is invalid".to_string()));
+			Err("--min-length is invalid".to_string()));
 	}
 
 	#[test]
