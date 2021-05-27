@@ -181,10 +181,15 @@ pub fn help(exe: &String) {
 	println!(
 		"Analyze ciphertext with classical cryptanalysis\n\
 		\n\
-		Usage: {exe} [--bytes BYTES] METHOD [METHOD PARAMETERS] FILE\n\
-		\t-h|--help: Print this help message\n\
-		\t{bytes}:   How many bytes to group together.\n\
-		\t           1, 2, 4, 8, 16 (Default: {size}\n\
+		Usage: {exe} [{bytes} BYTES] [{skip_first} SKIP_FIRST]\
+		[{keep_every} KEEP_EVERY] [METHOD [METHOD PARAMETERS] FILE\n\
+		\t-h|--help:    Print this help message\n\
+		\t{bytes}:      How many bytes to group together.\n\
+		\t              1, 2, 4, 8, 16 (Default: {size}\n\
+		\t{skip_first}: Skip first BYTES bytes \
+		(Default: {skip_first_default})\n\
+		\t{keep_every}: Keep only every KEEP_EVERY-th BYTES-len bytes\
+		(Default: {keep_every_default}\n\
 		\n\
 		Methods:\n\
 		\t{min_max}                 Show range of bytes\n\
@@ -198,6 +203,10 @@ pub fn help(exe: &String) {
 		min_length=STR_MIN_LENGTH,
 		kasiski_examination=STR_KASISKI_EXAMINATION,
 		bytes=STR_BYTES,
+		keep_every=STR_KEEP_EVERY,
+		keep_every_default=DEFAULT_KEEP_EVERY,
+		skip_first=STR_SKIP_FIRST,
+		skip_first_default=DEFAULT_SKIP_FIRST,
 		size=DEFAULT_SIZE);
 }
 
