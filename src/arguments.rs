@@ -19,6 +19,8 @@ pub enum Sizes {
 
 #[derive(PartialEq, Debug)]
 pub struct Action {
+	pub keep_every: usize,
+	pub skip_first: usize,
 	pub method: AnalyzeMethod,
 	pub size: Sizes,
 	pub filename: String,
@@ -27,11 +29,15 @@ pub struct Action {
 
 const DEFAULT_KASISKI_LEN: usize = 5;
 const DEFAULT_SIZE: &str = "1";
+const DEFAULT_KEEP_EVERY: &str = "1";
+const DEFAULT_SKIP_FIRST: &str = "0";
 const STR_MIN_MAX: &str = "min_max";
 const STR_FREQUENCY_ANALYSIS: &str = "frequency_analysis";
 const STR_KASISKI_EXAMINATION: &str = "kasiski_examination";
 const STR_MIN_LENGTH: &str = "--min-length";
 const STR_BYTES: &str = "--bytes";
+const STR_KEEP_EVERY: &str = "--keep-every";
+const STR_SKIP_FIRST: &str = "--skip-first";
 
 fn parse_sizes(arg: Option<&String>) -> Result<Sizes, String> {
 	let error = Err("Bytes parameter is invalid".to_string());
@@ -51,13 +57,13 @@ fn parse_sizes(arg: Option<&String>) -> Result<Sizes, String> {
 	};
 }
 
-fn parse_usize(arg: Option<&String>, error: String) -> Result<usize, String> {
+fn parse_usize(arg: Option<&String>, error: &String) -> Result<usize, String> {
 	match arg.map(|s| s.parse::<usize>()) {
 		Some(Ok(l)) => {
 			return Ok(l);
 		},
 		_ => {
-			return Err(error);
+			return Err(error.clone());
 		},
 	};
 }
@@ -79,21 +85,48 @@ fn parse_kasiski_examination_params(args: &Vec<String>, pos: usize) ->
 	};
 }
 
-pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
-	let mut method: AnalyzeMethod = AnalyzeMethod::None;
-	let mut file: Option<String> = None;
-	let mut help = false;
-	let mut method_set_count = 0;
-	let mut size: Sizes = parse_sizes(Some(&DEFAULT_SIZE.to_string())).unwrap();
+fn parse_optionals(args: &Vec<String>) -> Result<(Sizes, usize, usize, usize), String> {
+	let mut size: Sizes = parse_sizes(Some(&DEFAULT_SIZE.to_string()))?;
+	let keep_every_error = format!("{} is invalid", STR_KEEP_EVERY);
+	let mut keep_every = parse_usize(Some(&DEFAULT_KEEP_EVERY.to_string()), &keep_every_error)?;
+	let skip_first_error = format!("{} is invalid", STR_SKIP_FIRST);
+	let mut skip_first = parse_usize(Some(&DEFAULT_SKIP_FIRST.to_string()), &skip_first_error)?;
 
 	let mut pos = 1; // Skip binary
 	while pos < args.len() {
 		let arg = &args[pos];
 		match Some(&*arg.to_string()) {
 			Some(STR_BYTES) => {
+				size = parse_sizes(args.get(pos + 1))?;
 				pos += 1;
-				size = parse_sizes(args.get(pos))?;
 			},
+			Some(STR_KEEP_EVERY) => {
+				keep_every = parse_usize(args.get(pos + 1), &keep_every_error)?;
+				pos += 1;
+			},
+			Some(STR_SKIP_FIRST) => {
+				skip_first = parse_usize(args.get(pos + 1), &skip_first_error)?;
+				pos += 1;
+			},
+			_ => {
+				break;
+			},
+		}
+		pos += 1;
+	}
+	return Ok((size, skip_first, keep_every, pos));
+}
+
+pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
+	let mut method: AnalyzeMethod = AnalyzeMethod::None;
+	let mut file: Option<String> = None;
+	let mut help = false;
+	let mut method_set_count = 0;
+
+	let (size, skip_first, keep_every, mut pos) = parse_optionals(&args)?;
+	while pos < args.len() {
+		let arg = &args[pos];
+		match Some(&*arg.to_string()) {
 			Some(STR_MIN_MAX) => {
 				method = AnalyzeMethod::MinMax;
 				method_set_count += 1;
@@ -133,6 +166,8 @@ pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
 	}
 	return match file {
 		Some(f) => Ok(Action {
+			skip_first: skip_first,
+			keep_every: keep_every,
 			method: method,
 			filename: f,
 			size: size,
@@ -201,19 +236,19 @@ mod tests {
 			return "err".to_string();
 		}
 		assert_eq!(
-			arguments::parse_usize(Some(&"0".to_string()), e()).unwrap(),
+			arguments::parse_usize(Some(&"0".to_string()), &e()).unwrap(),
 			0);
 		assert_eq!(
-			arguments::parse_usize(Some(&"187".to_string()), e()).unwrap(),
+			arguments::parse_usize(Some(&"187".to_string()), &e()).unwrap(),
 			187);
 		assert_eq!(
-			arguments::parse_usize(Some(&"-1".to_string()), e()),
+			arguments::parse_usize(Some(&"-1".to_string()), &e()),
 			Err(e()));
 		assert_eq!(
-			arguments::parse_usize(Some(&"tes".to_string()), e()),
+			arguments::parse_usize(Some(&"tes".to_string()), &e()),
 			Err(e()));
 		assert_eq!(
-			arguments::parse_usize(None, e()),
+			arguments::parse_usize(None, &e()),
 			Err(e()));
 	}
 
@@ -244,6 +279,30 @@ mod tests {
 	}
 
 	#[test]
+	fn parse_optionals_all() {
+		assert_eq!(
+			arguments::parse_optionals(&vec_str_conv(vec![
+				"", "--bytes", "8", "--skip-first", "3", "--keep-every", "2"])),
+			Ok((arguments::Sizes::U64, 3, 2, 7)));
+	}
+
+	#[test]
+	fn parse_optionals_partial() {
+		assert_eq!(
+			arguments::parse_optionals(&vec_str_conv(vec![
+				"", "--skip-first", "3", "method", "--keep-every", "2"])),
+			Ok((arguments::Sizes::U8, 3, 1, 3)));
+	}
+
+	#[test]
+	fn parse_optionals_defaults() {
+		assert_eq!(
+			arguments::parse_optionals(&vec_str_conv(vec![
+				"", "method", "--skip-first", "3", "--keep-every", "2"])),
+			Ok((arguments::Sizes::U8, 0, 1, 1)));
+	}
+
+	#[test]
 	fn parse_args() {
 		assert_eq!(
 			arguments::parse_args(&vec_str_conv(vec![])),
@@ -259,6 +318,8 @@ mod tests {
 			arguments::parse_args(&vec_str_conv(
 				vec!["", "--bytes", "1", "min_max", "file"])),
 			Ok(arguments::Action {
+				skip_first: 0,
+				keep_every: 1,
 				method: arguments::AnalyzeMethod::MinMax,
 				size: arguments::Sizes::U8,
 				filename: "file".to_string(),
@@ -267,6 +328,8 @@ mod tests {
 			arguments::parse_args(&vec_str_conv(
 				vec!["", "--bytes", "2", "frequency_analysis", "da"])),
 			Ok(arguments::Action {
+				skip_first: 0,
+				keep_every: 1,
 				method: arguments::AnalyzeMethod::FrequencyAnalysis,
 				size: arguments::Sizes::U16,
 				filename: "da".to_string(),
@@ -276,14 +339,19 @@ mod tests {
 				vec!["", "--bytes", "4", "kasiski_examination",
 				     "--min-length", "8", "input"])),
 			Ok(arguments::Action {
+				skip_first: 0,
+				keep_every: 1,
 				method: arguments::AnalyzeMethod::KasiskiExamination(8),
 				size: arguments::Sizes::U32,
 				filename: "input".to_string(),
 				help: false }));
 		assert_eq!(
 			arguments::parse_args(&vec_str_conv(
-				vec!["", "--bytes", "8", "kasiski_examination", "in"])),
+				vec!["", "--bytes", "8", "--keep-every", "4",
+				     "--skip-first", "2", "kasiski_examination", "in"])),
 			Ok(arguments::Action {
+				skip_first: 2,
+				keep_every: 4,
 				method: arguments::AnalyzeMethod::KasiskiExamination(5),
 				size: arguments::Sizes::U64,
 				filename: "in".to_string(),
@@ -292,6 +360,8 @@ mod tests {
 			arguments::parse_args(&vec_str_conv(
 				vec!["", "--bytes", "16", "kasiski_examination", "--help"])),
 			Ok(arguments::Action {
+				skip_first: 0,
+				keep_every: 1,
 				method: arguments::AnalyzeMethod::KasiskiExamination(5),
 				size: arguments::Sizes::U128,
 				filename: "".to_string(),
@@ -300,6 +370,8 @@ mod tests {
 			arguments::parse_args(&vec_str_conv(
 				vec!["", "-h"])),
 			Ok(arguments::Action {
+				skip_first: 0,
+				keep_every: 1,
 				method: arguments::AnalyzeMethod::None,
 				size: arguments::Sizes::U8,
 				filename: "".to_string(),

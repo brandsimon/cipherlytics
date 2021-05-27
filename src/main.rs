@@ -17,7 +17,9 @@ fn main_type<
 	   From<<T as Shl>::Output> + types::NumBytes + Display + PartialOrd
 >(action: &arguments::Action) -> Result<(), io::Error> {
 	let input = input::read_file(&action.filename)?;
-	let vec = input::convert_vec::<T>(&input)?;
+	let conv_vec = input::convert_vec::<T>(&input)?;
+	let vec = input::filter_input_vec(
+		&conv_vec, action.keep_every, action.skip_first)?;
 	let mut stdout = io::stdout();
 	let mut out = io::Stdout::lock(&mut stdout);
 	match action.method {
