@@ -46,7 +46,7 @@ fn main() {
 		Ok(l) => l,
 		Err(s) => {
 			println!("{}", s);
-			return;
+			std::process::exit(2);
 		},
 	};
 	if action.help {
@@ -60,10 +60,11 @@ fn main() {
 		arguments::Sizes::U64 => main_type::<u64>(&action),
 		arguments::Sizes::U128 => main_type::<u128>(&action),
 	};
-	match result {
-		Ok(()) => (),
+	std::process::exit(match result {
+		Ok(()) => 0,
 		Err(l) => {
 			println!("Error: {}", l);
+			1
 		},
-	}
+	});
 }
