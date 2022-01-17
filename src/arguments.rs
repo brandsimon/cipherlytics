@@ -179,7 +179,7 @@ pub fn parse_args(args: &Vec<String>) -> Result<Action, String> {
 
 pub fn help(exe: &String) {
 	println!(
-		"Analyze ciphertext with classical cryptanalysis\n\
+		"Analyze ciphertext with classical cryptoanalysis\n\
 		\n\
 		Usage: {exe} [OPTIONAL ARGUMENTS] [METHOD [METHOD PARAMETERS] FILE\n\
 		\n\
