@@ -34,7 +34,8 @@ fn main_type<
 		},
 		arguments::AnalyzeMethod::KasiskiExamination(l) => {
 			let res = analytics::kasiski_examination(&vec, l);
-			analytics::print_kasiski_examination_result(res, &mut out)?;
+			analytics::print_kasiski_examination_result(&res, &mut out)?;
+			analytics::print_kasiski_examination_total(&res, &mut out)?;
 		},
 	};
 	return Ok(());

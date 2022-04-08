@@ -138,7 +138,7 @@ fn print_inner_vec<
 
 pub fn print_kasiski_examination_result<
 	T: Display, W: Write
->(map: HashMap<Vec<T>, HashSet<usize>>, mut out: &mut W) -> Result<(), io::Error> {
+>(map: &HashMap<Vec<T>, HashSet<usize>>, mut out: &mut W) -> Result<(), io::Error> {
 	writeln!(out, "Words: {}", map.len())?;
 	let mut vec: Vec<(&Vec<T>, &HashSet<usize>)> = map.iter().collect();
 	vec.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
@@ -156,10 +156,22 @@ pub fn print_kasiski_examination_result<
 	return Ok(());
 }
 
+pub fn print_kasiski_examination_total<
+	T: Display, W: Write
+>(map: &HashMap<Vec<T>, HashSet<usize>>, out: &mut W) -> Result<(), io::Error> {
+	let mut total = 0;
+	for (i, j) in map {
+		total += i.len() * j.len();
+	}
+	writeln!(out, "Total: {}", total)?;
+	return Ok(());
+}
+
 #[cfg(test)]
 mod tests {
 	use super::kasiski_examination;
 	use super::print_kasiski_examination_result;
+	use super::print_kasiski_examination_total;
 	use super::print_inner_vec;
 	use super::param_to_word;
 	use super::find_common_length;
@@ -288,7 +300,7 @@ mod tests {
 	fn print_kasiski_examination_result_empty() {
 		let mut out = Vec::new();
 		let map: HashMap<Vec<u16>, HashSet<usize>> = HashMap::new();
-		print_kasiski_examination_result(map, &mut out).unwrap();
+		print_kasiski_examination_result(&map, &mut out).unwrap();
 		let mut expected = Vec::new();
 		writeln!(expected, "Words: 0").unwrap();
 		assert_eq!(out, expected);
@@ -301,12 +313,35 @@ mod tests {
 			(vec![17, 223], set![2, 6, 9]),
 			(vec![3, 17, 223, 4, 2], set![1, 8]),
 			(vec![223, 255, 4], set![1, 2, 3, 5])].iter().cloned().collect();
-		print_kasiski_examination_result(map, &mut out).unwrap();
+		print_kasiski_examination_result(&map, &mut out).unwrap();
 		let mut expected = Vec::new();
 		writeln!(expected, "Words: 3").unwrap();
 		writeln!(expected, "{{1, 8}}: [3, 17, 223, 4, 2]").unwrap();
 		writeln!(expected, "{{1, 2, 3, 5}}: [223, 255, 4]").unwrap();
 		writeln!(expected, "{{2, 6, 9}}: [17, 223]").unwrap();
+		assert_eq!(out, expected);
+	}
+
+	#[test]
+	fn print_kasiski_examination_total_empty() {
+		let mut out = Vec::new();
+		let map: HashMap<Vec<u16>, HashSet<usize>> = HashMap::new();
+		print_kasiski_examination_total(&map, &mut out).unwrap();
+		let mut expected = Vec::new();
+		writeln!(expected, "Total: 0").unwrap();
+		assert_eq!(out, expected);
+	}
+
+	#[test]
+	fn print_kasiski_examination_total_words() {
+		let mut out = Vec::new();
+		let map: HashMap<Vec<u16>, HashSet<usize>> = [
+			(vec![17, 223], set![2, 6, 9]),
+			(vec![3, 17, 223, 4, 2], set![1, 8]),
+			(vec![223, 255, 4], set![1, 2, 3, 5])].iter().cloned().collect();
+		print_kasiski_examination_total(&map, &mut out).unwrap();
+		let mut expected = Vec::new();
+		writeln!(expected, "Total: 28").unwrap();
 		assert_eq!(out, expected);
 	}
 }
